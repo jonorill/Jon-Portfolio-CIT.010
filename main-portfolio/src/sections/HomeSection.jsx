@@ -35,34 +35,25 @@ const HomeSection = () => {
         .to(chars, { y: 0, opacity: 1, duration: 0.6, stagger: 0.02 }, "-=0.4")
         .to(subtitleRef.current, { y: 0, opacity: 1, duration: 0.6 }, "-=0.3");
 
-      // Per-letter mouse-follow base offsets
+      // Per-letter mouse-follow base offsets (line no longer moves)
       const qCharX = chars.map((el) =>
         gsap.quickTo(el, "x", { duration: 0.2, ease: "power2.out" })
       );
       const qCharY = chars.map((el) =>
         gsap.quickTo(el, "y", { duration: 0.2, ease: "power2.out" })
       );
-      const qLineX = gsap.quickTo(lineRef.current, "x", {
-        duration: 0.25,
-        ease: "power2.out",
-      });
 
       const baseX = new Array(chars.length).fill(0);
       const baseY = new Array(chars.length).fill(0);
-      const liftY = Object.fromEntries(chars.map((_, i) => [i, 0])); // per-letter lift amount
+      const liftY = Object.fromEntries(chars.map((_, i) => [i, 0]));
 
       const area = hoverAreaRef.current;
       const radius = 180;
       const ampX = 16;
       const ampY = 10;
-      const ampLine = 6;
 
       const onMove = (e) => {
         if (!area) return;
-
-        let maxW = 0;
-        let lineShift = 0;
-
         chars.forEach((el, i) => {
           const r = el.getBoundingClientRect();
           const cx = r.left + r.width / 2;
@@ -81,17 +72,9 @@ const HomeSection = () => {
             baseX[i] = 0;
             baseY[i] = 0;
           }
-
           qCharX[i](baseX[i]);
-          qCharY[i](baseY[i] + liftY[i]); // add lift offset
-
-          if (w > maxW) {
-            maxW = w;
-            lineShift = (dx / (dist || 1)) * ampLine * w;
-          }
+          qCharY[i](baseY[i] + liftY[i]);
         });
-
-        qLineX(lineShift);
       };
 
       const onLeave = () => {
@@ -99,25 +82,23 @@ const HomeSection = () => {
           baseX[i] = 0;
           baseY[i] = 0;
           qCharX[i](0);
-          qCharY[i](liftY[i]); // keep lift while leaving area; arrow leave on letters will reset to 0
+          qCharY[i](liftY[i]);
         }
-        qLineX(0);
       };
 
       area?.addEventListener("mousemove", onMove);
       area?.addEventListener("mouseleave", onLeave);
 
-      // Letter-specific lift on hover (slight rise)
+      // Subtle per-letter lift
       const enterHandlers = [];
       const leaveHandlers = [];
-
       chars.forEach((el, i) => {
         const onEnter = () => {
           const to = {};
-          to[i] = -8; // lift amount (px)
+          to[i] = -4; // subtle lift
           gsap.to(liftY, {
             ...to,
-            duration: 0.2,
+            duration: 0.18,
             ease: "power2.out",
             onUpdate: () => qCharY[i](baseY[i] + liftY[i]),
           });
@@ -127,7 +108,7 @@ const HomeSection = () => {
           to[i] = 0;
           gsap.to(liftY, {
             ...to,
-            duration: 0.25,
+            duration: 0.22,
             ease: "power2.out",
             onUpdate: () => qCharY[i](baseY[i] + liftY[i]),
           });
@@ -168,7 +149,7 @@ const HomeSection = () => {
           <h1
             ref={titleRef}
             className="
-              text-[clamp(48px,10vw,100px)]
+              text-[clamp(48px,10vw,110px)]
               text-white
               font-poiret
               tracking-wide
@@ -181,7 +162,7 @@ const HomeSection = () => {
             {TITLE.split("").map((ch, i) => (
               <span
                 key={i}
-                className="char inline-block" // pointer events enabled for per-letter hover
+                className="char inline-block"
                 draggable={false}
                 style={{ userSelect: "none" }}
               >
@@ -189,23 +170,24 @@ const HomeSection = () => {
               </span>
             ))}
           </h1>
+          {/* Tighter line spacing (was mt-2 = 8px). Now 2px */}
           <div
             ref={lineRef}
-            className="mt-2 h-[4px] bg-white rounded-full -ml-2 w-[calc(100%+0.5rem+24px)] pointer-events-none"
+            className="mt-[-20px] mb-[-5px] h-[3px] bg-white/70 rounded-full -ml-2 w:[calc(100%+0.5rem+56px)] w-[calc(100%+0.5rem+56px)] pointer-events-none"
           />
         </div>
 
         <div
           ref={subtitleRef}
           className="
-            mt-3
-            text-[clamp(18px,3vw,30px)]
-            text-white/70
-            font-inter
-            font-bold
-            tracking-wide
-            select-none pointer-events-none
-          "
+              mt-3
+              text-[clamp(18px,3vw,30px)]
+              text-white/70
+              font-inter
+              font-bold
+              tracking-wide
+              select-none pointer-events-none
+            "
           draggable={false}
         >
           {SUBTITLE}
