@@ -6,14 +6,13 @@ const SideNav = ({ sections, activeId, onNavigate, open, onToggle }) => {
       className={[
         "fixed right-0 top-1/2 -translate-y-1/2 z-20",
         "transition-transform duration-300",
-        // Collapsed: keep only arrow visible (width 4rem mobile, 5rem md+)
         open
           ? "translate-x-0"
-          : "translate-x-[calc(100%-4rem)] md:translate-x-[calc(100%-5rem)]",
+          : "translate-x-[calc(100%-4.25rem)] md:translate-x-[calc(100%-2rem)]", //toggle movement for sidenav
       ].join(" ")}
     >
-      <div className="relative w-50 pl-0 pt-6 pr-6 pb-6 bg-transparent">
-        {/* Toggle arrow (matches bottom arrow sizing) */}
+      <div className="relative w-fit min-w-[9rem] pl-0 pt-6 pr-3 pb-6 bg-transparent">
+        {/* Toggle arrow */}
         <button
           type="button"
           onClick={onToggle}
@@ -22,7 +21,6 @@ const SideNav = ({ sections, activeId, onNavigate, open, onToggle }) => {
           title={open ? "Hide" : "Show"}
           className={[
             "absolute left-0 top-1/2 -translate-y-1/2 -translate-x-full",
-            // Responsive size: same as bottom arrow (h/w 16 -> 20 on md)
             "h-16 w-16 md:h-20 md:w-20 grid place-items-center",
             "text-white/80 hover:text-white",
             "text-4xl md:text-5xl leading-none",
@@ -34,7 +32,7 @@ const SideNav = ({ sections, activeId, onNavigate, open, onToggle }) => {
           <span
             className={[
               "inline-block select-none transition-transform duration-300",
-              open ? "rotate-180" : "",
+              open ? "" : "rotate-180",
             ].join(" ")}
           >
             ▸
@@ -66,7 +64,7 @@ const SideNav = ({ sections, activeId, onNavigate, open, onToggle }) => {
                     "transition-colors duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
                     active
                       ? "text-white opacity-100"
-                      : "text-white/50 group-hover:text-white/90",
+                      : "text-white/70 group-hover:text-white",
                   ].join(" ")}
                 >
                   {s.label.toUpperCase()}
