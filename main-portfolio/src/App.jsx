@@ -109,16 +109,19 @@ const App = () => {
           type="button"
           onClick={() => handleNavigate(nextId)}
           className="
-            fixed bottom-6 left-1/2 -translate-x-1/2 z-20
-            h-12 w-12 grid place-items-center
-            text-white/80 hover:text-white text-3xl
+            fixed bottom-2 md:bottom-4 left-1/2 -translate-x-1/2 z-20
+            h-16 w-16 md:h-20 md:w-20
+            grid place-items-center
+            text-white/80 hover:text-white
+            text-4xl md:text-5xl
             transition-transform duration-200 hover:scale-110
             focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40
+            select-none
           "
           aria-label="Scroll to next section"
           title="Next"
         >
-          <span className="select-none">▾</span>
+          <span className="leading-none">▾</span>
         </button>
       )}
 

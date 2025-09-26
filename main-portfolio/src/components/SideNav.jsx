@@ -6,24 +6,30 @@ const SideNav = ({ sections, activeId, onNavigate, open, onToggle }) => {
       className={[
         "fixed right-0 top-1/2 -translate-y-1/2 z-20",
         "transition-transform duration-300",
-        open ? "translate-x-0" : "translate-x-[calc(100%-3rem)]",
+        // Collapsed: keep only arrow visible (width 4rem mobile, 5rem md+)
+        open
+          ? "translate-x-0"
+          : "translate-x-[calc(100%-4rem)] md:translate-x-[calc(100%-5rem)]",
       ].join(" ")}
     >
-      <div className="relative w-56 px-6 py-6 bg-transparent">
-        {/* Toggle arrow (bigger, no tab) */}
+      <div className="relative w-50 pl-0 pt-6 pr-6 pb-6 bg-transparent">
+        {/* Toggle arrow (matches bottom arrow sizing) */}
         <button
           type="button"
           onClick={onToggle}
-          className={[
-            "absolute left-0 top-1/2 -translate-y-1/2 -translate-x-full",
-            "h-12 w-12 grid place-items-center",
-            "text-white/80 hover:text-white text-3xl",
-            "transition-transform duration-200 hover:scale-110",
-            "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40",
-          ].join(" ")}
           aria-label={open ? "Hide navigation" : "Show navigation"}
           aria-expanded={open}
           title={open ? "Hide" : "Show"}
+          className={[
+            "absolute left-0 top-1/2 -translate-y-1/2 -translate-x-full",
+            // Responsive size: same as bottom arrow (h/w 16 -> 20 on md)
+            "h-16 w-16 md:h-20 md:w-20 grid place-items-center",
+            "text-white/80 hover:text-white",
+            "text-4xl md:text-5xl leading-none",
+            "transition-transform duration-200 hover:scale-110",
+            "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40",
+            "select-none",
+          ].join(" ")}
         >
           <span
             className={[
@@ -47,7 +53,6 @@ const SideNav = ({ sections, activeId, onNavigate, open, onToggle }) => {
                   "group relative inline-flex items-center justify-end",
                   "transition-transform duration-150 will-change-transform",
                   "hover:scale-110",
-                  // underline only on hover, right-aligned
                   "after:absolute after:right-0 after:-bottom-1",
                   "after:h-[2px] after:bg-white/80 after:w-0 hover:after:w-full",
                   "after:transition-[width] after:duration-200 after:content-['']",
@@ -58,8 +63,7 @@ const SideNav = ({ sections, activeId, onNavigate, open, onToggle }) => {
                   className={[
                     "uppercase tracking-wide font-medium",
                     "text-sm md:text-base lg:text-lg",
-                    // Smooth color/opacity transitions (separate from transform)
-                    "transition-colors transition-opacity duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                    "transition-colors duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
                     active
                       ? "text-white opacity-100"
                       : "text-white/50 group-hover:text-white/90",
