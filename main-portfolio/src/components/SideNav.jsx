@@ -1,18 +1,30 @@
 import React from "react";
 
+/* ---------- Component Props ----------
+sections : [{ id, label }]
+activeId : id of current section
+onNavigate(id) : callback to scroll / switch
+open : boolean (panel expanded)
+onToggle() : open/close trigger
+--------------------------------------- */
+
 const SideNav = ({ sections, activeId, onNavigate, open, onToggle }) => {
+  /* ---------- Derived Classes / Helpers ---------- */
+  const containerTranslate = open
+    ? "translate-x-0"
+    : "translate-x-[calc(100%-4.25rem)] md:translate-x-[calc(100%-2rem)]";
+
   return (
     <aside
+      aria-label="Section Navigation"
       className={[
         "fixed right-0 top-1/2 -translate-y-1/2 z-20",
         "transition-transform duration-300",
-        open
-          ? "translate-x-0"
-          : "translate-x-[calc(100%-4.25rem)] md:translate-x-[calc(100%-2rem)]", //toggle movement for sidenav
+        containerTranslate,
       ].join(" ")}
     >
       <div className="relative w-fit min-w-[9rem] pl-0 pt-6 pr-3 pb-6 bg-transparent">
-        {/* Toggle arrow */}
+        {/* ---------- Toggle Button ---------- */}
         <button
           type="button"
           onClick={onToggle}
@@ -39,8 +51,8 @@ const SideNav = ({ sections, activeId, onNavigate, open, onToggle }) => {
           </span>
         </button>
 
-        {/* Links */}
-        <nav className="flex flex-col gap-3 text-right">
+        {/* ---------- Navigation Links ---------- */}
+        <nav className="flex flex-col gap-3 text-right" role="navigation">
           {sections.map((s) => {
             const active = s.id === activeId;
             return (
@@ -50,9 +62,9 @@ const SideNav = ({ sections, activeId, onNavigate, open, onToggle }) => {
                 className={[
                   "group relative inline-flex items-center justify-end",
                   "transition-transform duration-150 will-change-transform",
-                  "hover:scale-110",
+                  "hover:scale-110 focus:outline-none",
                   "after:absolute after:right-0 after:-bottom-1",
-                  "after:h-[2px] after:bg-white/80 after:w-0 hover:after:w-full",
+                  "after:h-[2px] after:bg-white/80 after:w-0 group-hover:after:w-full",
                   "after:transition-[width] after:duration-200 after:content-['']",
                 ].join(" ")}
                 aria-current={active ? "page" : undefined}

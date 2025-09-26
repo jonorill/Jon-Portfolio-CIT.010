@@ -4,18 +4,27 @@ import "lenis/dist/lenis.css";
 import TopographyBackground from "./components/TopographyBackground.jsx";
 import SideNav from "./components/SideNav.jsx";
 import HomeSection from "./sections/HomeSection.jsx";
+import SiteHeader from "./components/SiteHeader.jsx";
+import AboutSection from "./sections/AboutSection.jsx";
 
 const sections = [
   { id: "home", label: "Home" },
-  { id: "about", label: "About Me" },
-  { id: "projects", label: "Projects" },
+  { id: "projects", label: "Projects" }, // moved up
+  { id: "about", label: "About Me" }, // now after projects
   { id: "contact", label: "Contact" },
 ];
 
 const App = () => {
   const [activeId, setActiveId] = useState("home");
   const [navOpen, setNavOpen] = useState(true);
+  const [activeSubLabel, setActiveSubLabel] = useState(null);
   const lenisRef = useRef(null);
+
+  // Map section id -> label (for header)
+  const sectionLabelMap = sections.reduce((acc, s) => {
+    acc[s.id] = s.label;
+    return acc;
+  }, {});
 
   // Init Lenis once
   useEffect(() => {
@@ -90,39 +99,87 @@ const App = () => {
   };
   const nextId = getNextId(activeId);
 
+  // NEW: compute previous section id
+  const getPrevId = (current) => {
+    const idx = sections.findIndex((s) => s.id === current);
+    return idx > 0 ? sections[idx - 1].id : null;
+  };
+  const prevId = getPrevId(activeId);
+
   return (
     <main className="relative">
       <TopographyBackground />
 
+      {/* Morphing global header only off home */}
+      {activeId !== "home" && (
+        <SiteHeader
+          activeSection={activeId}
+          sectionLabels={sectionLabelMap}
+          activeSubLabel={activeSubLabel}
+        />
+      )}
+
       {/* Right-side collapsible nav */}
       <SideNav
-        sections={sections}
+        sections={sections} // side nav now reflects new order
         activeId={activeId}
         open={navOpen}
         onToggle={() => setNavOpen((v) => !v)}
         onNavigate={handleNavigate}
       />
 
-      {/* Bottom-center arrow (matches SideNav style). Hidden on last section */}
-      {nextId && (
-        <button
-          type="button"
-          onClick={() => handleNavigate(nextId)}
+      {/* Bottom navigation arrows (side by side, each centers when alone) */}
+      {(prevId || nextId) && (
+        <div
           className="
             fixed bottom-2 md:bottom-4 left-1/2 -translate-x-1/2 z-20
-            h-16 w-16 md:h-20 md:w-20
-            grid place-items-center
-            text-white/80 hover:text-white
-            text-4xl md:text-5xl
-            transition-transform duration-200 hover:scale-110
-            focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40
-            select-none
+            flex items-center justify-center gap-8
           "
-          aria-label="Scroll to next section"
-          title="Next"
         >
-          <span className="leading-none">▾</span>
-        </button>
+          {/* Prev (Up) Arrow */}
+          <button
+            type="button"
+            onClick={() => prevId && handleNavigate(prevId)}
+            className={`
+              h-16 w-16 md:h-20 md:w-20 grid place-items-center
+              text-4xl md:text-5xl leading-none select-none
+              transition-all duration-400 ease-[cubic-bezier(0.22,1,0.36,1)]
+              ${
+                prevId
+                  ? "opacity-80 scale-100 translate-y-0 text-white/80 hover:text-white pointer-events-auto"
+                  : "opacity-0 scale-75 translate-y-2 pointer-events-none"
+              }
+              focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40
+              hover:scale-110
+            `}
+            aria-label="Previous section"
+            title="Previous"
+          >
+            <span>▴</span>
+          </button>
+
+          {/* Next (Down) Arrow */}
+          <button
+            type="button"
+            onClick={() => nextId && handleNavigate(nextId)}
+            className={`
+              h-16 w-16 md:h-20 md:w-20 grid place-items-center
+              text-4xl md:text-5xl leading-none select-none
+              transition-all duration-400 ease-[cubic-bezier(0.22,1,0.36,1)]
+              ${
+                nextId
+                  ? "opacity-80 scale-100 translate-y-0 text-white/80 hover:text-white pointer-events-auto"
+                  : "opacity-0 scale-75 -translate-y-2 pointer-events-none"
+              }
+              focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40
+              hover:scale-110
+            `}
+            aria-label="Next section"
+            title="Next"
+          >
+            <span>▾</span>
+          </button>
+        </div>
       )}
 
       {/* Page sections (full-height stack) */}
@@ -131,18 +188,18 @@ const App = () => {
         <HomeSection />
       </section>
 
-      {/* Stubs for future sections */}
-      <section
-        id="about"
-        className="min-h-screen flex items-center justify-center"
-      >
-        <div className="text-white/70">About Me (placeholder)</div>
-      </section>
       <section
         id="projects"
         className="min-h-screen flex items-center justify-center"
       >
         <div className="text-white/70">Projects (placeholder)</div>
+      </section>
+
+      <section
+        id="about"
+        className="min-h-screen flex items-start justify-center"
+      >
+        <AboutSection onActiveSubChange={setActiveSubLabel} />
       </section>
       <section
         id="contact"
