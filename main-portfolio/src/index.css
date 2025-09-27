@@ -9,3 +9,22 @@
 body {
   @apply bg-gray-950;
 }
+
+.about-span {
+  display: block;
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.55s ease-out,
+    transform 0.65s cubic-bezier(0.23, 1, 0.32, 1);
+  will-change: transform, opacity;
+}
+
+.about-span.about-span--in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.about-span.about-span--leaving-top {
+  opacity: 0;
+  transform: translateY(-28px);
+}

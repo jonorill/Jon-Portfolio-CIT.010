@@ -1,10 +1,4 @@
-import React, {
-  useRef,
-  useEffect,
-  useState,
-  useCallback,
-  useLayoutEffect,
-} from "react";
+import React, { useRef, useEffect, useState, useCallback } from "react";
 
 /* ---------- Section Data (EDIT CONTENT HERE) ---------- */
 const SECTIONS = [
@@ -13,9 +7,18 @@ const SECTIONS = [
     title: "Who I Am",
     preview: "Brief snapshot about you and your focus as a developer.",
     content: [
-      "I’m a student full‑stack developer eager to keep learning and growing. I value clean, organized, and well‑planned development processes.",
-      "My approach centers on clarity, code quality, and maintainability—ensuring projects are not only built with solid code, but also structured for long‑term success.",
-      "Outside pure coding, I focus on architecture decisions, developer experience, and continuous improvement of workflow.",
+      [
+        "I’m a student full‑stack developer eager to keep learning and growing.",
+        "I value clean, organized, and well‑planned development processes.",
+      ],
+      [
+        "My approach centers on clarity, code quality, and maintainability.",
+        "That means projects are not only built with solid code, but also structured for long‑term success.",
+      ],
+      [
+        "Outside pure coding, I focus on architecture decisions and developer experience.",
+        "I stay invested in continuously improving the overall workflow.",
+      ],
     ],
   },
   {
@@ -23,307 +26,244 @@ const SECTIONS = [
     title: "My Stack",
     preview: "Core languages, frameworks, tools, and areas of focus.",
     content: [
-      "Core Languages: JavaScript / TypeScript, Python, C++, Java.",
-      "Frameworks & Libraries: React, Node.js / Express, Tailwind CSS, GSAP (animation), Jest / Vitest (testing).",
-      "Databases & Infra: PostgreSQL, MongoDB, basic Docker usage, REST API design.",
-      "Practices: Modular architecture, accessibility considerations, performance awareness, readable commits, iterative refactor.",
-    ],
-  },
-  {
-    id: "contact",
-    title: "Contact",
-    preview: "How to reach you or view professional profiles.",
-    content: [
-      "I’m open to collaboration, internships, and early career opportunities.",
-      "Feel free to reach out—happy to discuss projects or ideas.",
+      [
+        "Core Languages: JavaScript / TypeScript, Python, C++, Java.",
+        "Frameworks & Libraries: React, Node.js / Express, Tailwind CSS, GSAP, Jest / Vitest.",
+      ],
+      [
+        "Databases & Infra: PostgreSQL, MongoDB, basic Docker usage, REST API design.",
+        "Practices: Modular architecture, accessibility considerations, performance awareness.",
+      ],
+      [
+        "I emphasize readable commits, iterative refactor, and a collaborative development process.",
+      ],
     ],
   },
 ];
 
-/* ---------- Minimap Config ---------- */
-const OBSERVER_ROOT_MARGIN = "-45% 0px -45% 0px";
-const MINIMAP_HEIGHT = 360;
-const MINIMAP_WIDTH = 120;
-const MINIMAP_GAP = 4;
-const MINIMAP_MIN_SECTION_H = 24;
-
-/* Component */
+/* ---------- Component ---------- */
 const AboutSection = ({ onActiveSubChange }) => {
-  /* ---------- State ---------- */
-  const [activeSub, setActiveSub] = useState(null);
-  const [miniLayout, setMiniLayout] = useState([]); // [{id, top, height}]
-  const [viewportMini, setViewportMini] = useState({ top: 0, height: 0 });
-
-  /* ---------- Refs ---------- */
+  const [activeId, setActiveId] = useState(null);
   const sectionRefs = useRef({});
-  const contentWrapRef = useRef(null);
   const observerRef = useRef(null);
 
-  /* ---------- Assign Section Ref ---------- */
   const setSectionRef = useCallback(
     (id) => (el) => {
-      if (el) sectionRefs.current[id] = el;
+      if (el) {
+        sectionRefs.current[id] = el;
+      } else {
+        delete sectionRefs.current[id];
+      }
     },
     []
   );
 
-  /* ---------- Smooth Scroll To Section ---------- */
-  const scrollToSection = (id) => {
-    const el = sectionRefs.current[id];
-    if (!el) return;
-    el.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
+  const handleShortcutClick = useCallback((id) => {
+    const target = sectionRefs.current[id];
+    if (!target) return;
+    target.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
 
-  /* ---------- Active Section Detection ---------- */
   useEffect(() => {
-    const elems = Object.values(sectionRefs.current);
-    if (!elems.length) return;
+    if (!onActiveSubChange) return;
+    if (!activeId) {
+      onActiveSubChange(null);
+      return;
+    }
+    const match = SECTIONS.find((s) => s.id === activeId);
+    onActiveSubChange(match ? match.title : null);
+  }, [activeId, onActiveSubChange]);
+
+  useEffect(() => {
+    const elements = Object.values(sectionRefs.current);
+    if (!elements.length) return;
 
     observerRef.current?.disconnect();
-    observerRef.current = new IntersectionObserver(
+    const observer = new IntersectionObserver(
       (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const id = entry.target.id;
-            const sec = SECTIONS.find((s) => s.id === id);
-            if (sec && sec.title !== activeSub) {
-              setActiveSub(sec.title);
-              onActiveSubChange && onActiveSubChange(sec.title);
-            }
-          }
-        });
+        const topEntry = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+
+        if (topEntry) {
+          const nextId = topEntry.target.dataset.sectionId;
+          setActiveId((prev) => (prev === nextId ? prev : nextId));
+        }
       },
       {
         root: null,
-        rootMargin: OBSERVER_ROOT_MARGIN,
-        threshold: 0,
+        rootMargin: "-45% 0px -45% 0px",
+        threshold: [0.25, 0.5, 0.75],
       }
     );
-    elems.forEach((el) => observerRef.current.observe(el));
 
-    return () => observerRef.current?.disconnect();
-  }, [activeSub, onActiveSubChange]);
+    elements.forEach((el) => observer.observe(el));
+    observerRef.current = observer;
 
-  /* ---------- Reset Header Subtitle On Unmount ---------- */
+    return () => observer.disconnect();
+  }, [SECTIONS.length]);
+
   useEffect(() => {
     return () => {
-      onActiveSubChange && onActiveSubChange(null);
+      if (onActiveSubChange) onActiveSubChange(null);
+      observerRef.current?.disconnect();
     };
   }, [onActiveSubChange]);
 
-  /* ---------- Build Minimap Layout ---------- */
-  const rebuildMinimap = useCallback(() => {
-    const items = SECTIONS.map((s) => {
-      const el = sectionRefs.current[s.id];
-      if (!el) return null;
-      const rect = el.getBoundingClientRect();
-      const top = window.scrollY + rect.top;
-      return { id: s.id, top, height: rect.height };
-    }).filter(Boolean);
-
-    if (!items.length) return;
-
-    const contentTop = items[0].top;
-    const contentBottom = Math.max(...items.map((x) => x.top + x.height));
-    const contentHeight = contentBottom - contentTop;
-
-    const totalGap = (items.length - 1) * MINIMAP_GAP;
-    const scale = (MINIMAP_HEIGHT - totalGap) / contentHeight;
-
-    const layout = items.map((it, index) => {
-      const h = Math.max(it.height * scale, MINIMAP_MIN_SECTION_H);
-      const relativeTop = it.top - contentTop;
-      const t = relativeTop * scale + index * MINIMAP_GAP;
-      return { id: it.id, top: t, height: h };
-    });
-
-    setMiniLayout(layout);
-    updateViewportRect(layout, contentTop, contentHeight);
-  }, []);
-
-  /* ---------- Update Viewport Rectangle ---------- */
-  const updateViewportRect = (layout, contentTop, contentHeight) => {
-    if (!layout.length) return;
-    const scrollTop = window.scrollY;
-    const winH = window.innerHeight;
-    const scale =
-      (MINIMAP_HEIGHT - (layout.length - 1) * MINIMAP_GAP) / contentHeight;
-
-    const viewportTopClamped = Math.max(
-      0,
-      Math.min(scrollTop - contentTop, contentHeight)
-    );
-    const miniTop = viewportTopClamped * scale;
-    const miniHeight = Math.max(12, Math.min(winH * scale, MINIMAP_HEIGHT));
-
-    setViewportMini({ top: miniTop, height: miniHeight });
-  };
-
-  /* ---------- Scroll / Resize Listeners (Minimap Sync) ---------- */
-  useEffect(() => {
-    let ticking = false;
-    const handleScroll = () => {
-      if (!miniLayout.length || ticking) return;
-      ticking = true;
-      requestAnimationFrame(() => {
-        const first = sectionRefs.current[SECTIONS[0].id];
-        const last = sectionRefs.current[SECTIONS[SECTIONS.length - 1].id];
-        if (first && last) {
-          const top = first.getBoundingClientRect().top + window.scrollY;
-          const bottom =
-            last.getBoundingClientRect().top +
-            window.scrollY +
-            last.getBoundingClientRect().height;
-          const contentHeight = bottom - top;
-          updateViewportRect(miniLayout, top, contentHeight);
-        }
-        ticking = false;
-      });
-    };
-    const handleResize = () => rebuildMinimap();
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    window.addEventListener("resize", handleResize);
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-      window.removeEventListener("resize", handleResize);
-    };
-  }, [miniLayout, rebuildMinimap]);
-
-  /* ---------- Initial Measurements ---------- */
-  useLayoutEffect(() => {
-    rebuildMinimap();
-    if (document.fonts?.ready) {
-      document.fonts.ready.then(() => rebuildMinimap());
-    }
-  }, [rebuildMinimap]);
-
-  /* ---------- Minimap Click / Pointer Navigation ---------- */
-  const onMinimapPointer = (e) => {
-    const box = e.currentTarget.getBoundingClientRect();
-    const y = e.clientY - box.top;
-
-    const first = sectionRefs.current[SECTIONS[0].id];
-    const last = sectionRefs.current[SECTIONS[SECTIONS.length - 1].id];
-    if (!first || !last) return;
-    const contentTop = first.getBoundingClientRect().top + window.scrollY;
-    const contentBottom =
-      last.getBoundingClientRect().top +
-      window.scrollY +
-      last.getBoundingClientRect().height;
-    const contentHeight = contentBottom - contentTop;
-
-    const scale =
-      (MINIMAP_HEIGHT - (SECTIONS.length - 1) * MINIMAP_GAP) / contentHeight;
-
-    const targetContentOffset = y / scale;
-    const scrollTarget =
-      contentTop + targetContentOffset - window.innerHeight / 2;
-
-    window.scrollTo({
-      top: Math.max(
-        contentTop,
-        Math.min(scrollTarget, contentBottom - window.innerHeight)
-      ),
-      behavior: "smooth",
-    });
-  };
-
-  /* ---------- Render ---------- */
   return (
-    <div className="relative px-6 md:px-10 lg:px-16 py-24 text-white">
-      <div
-        className="
-          grid gap-16
-          md:grid-cols-[160px_1fr]
-          lg:grid-cols-[180px_1fr]
-        "
-      >
-        {/* ---------- LEFT: Minimap ONLY ---------- */}
-        <aside className="md:sticky md:top-28 self-start">
-          <div>
-            <h3 className="text-sm tracking-widest font-inter text-white/50 uppercase mb-3">
-              Minimap
-            </h3>
-            <div
-              role="presentation"
-              onClick={onMinimapPointer}
-              onPointerDown={onMinimapPointer}
-              className={[
-                "relative rounded-md border border-white/15",
-                "bg-white/[0.02] overflow-hidden select-none",
-                "cursor-pointer hidden lg:block",
-              ].join(" ")}
-              style={{ width: MINIMAP_WIDTH, height: MINIMAP_HEIGHT }}
-            >
-              {miniLayout.map((m) => {
-                const active =
-                  activeSub &&
-                  SECTIONS.find((s) => s.id === m.id)?.title === activeSub;
+    <section className="relative px-6 md:px-12 lg:px-24 py-24 text-white">
+      <div className="mx-auto max-w-6xl md:flex md:gap-16 lg:gap-20">
+        <aside className="hidden md:block w-56 lg:w-64">
+          <div className="sticky top-32 space-y-5 text-left">
+            <span className="block text-[11px] tracking-[0.4em] uppercase text-white/40 font-inter">
+              Shortcuts
+            </span>
+            <div className="space-y-3">
+              {SECTIONS.map((section) => {
+                const isActive = section.id === activeId;
                 return (
-                  <div
-                    key={m.id}
-                    onClick={() => scrollToSection(m.id)}
+                  <button
+                    key={section.id}
+                    type="button"
+                    onClick={() => handleShortcutClick(section.id)}
                     className={[
-                      "absolute left-0 w-full rounded-sm px-1",
-                      "overflow-hidden text-[9px] leading-[1.05rem] font-inter tracking-wide",
-                      "transition-colors duration-200",
-                      active
-                        ? "bg-white/25 text-white"
-                        : "bg-white/10 text-white/60 hover:bg-white/15",
+                      "group w-full text-left",
+                      "px-3 py-2 rounded-md transition-all duration-200",
+                      isActive
+                        ? "bg-white/10 text-white"
+                        : "text-white/65 hover:text-white hover:bg-white/5",
                     ].join(" ")}
-                    style={{ top: m.top, height: m.height }}
+                    aria-current={isActive ? "true" : undefined}
                   >
-                    <div className="truncate uppercase">
-                      {m.id.replace(/-/g, " ")}
-                    </div>
-                  </div>
+                    <span className="block font-inter text-sm tracking-[0.25em] uppercase">
+                      {section.title}
+                    </span>
+                    {section.preview && (
+                      <span className="mt-1 block text-xs font-inter font-normal text-white/45 leading-snug">
+                        {section.preview}
+                      </span>
+                    )}
+                  </button>
                 );
               })}
-              <div
-                className="absolute left-0 right-0 pointer-events-none rounded-sm border border-white/80"
-                style={{
-                  top: viewportMini.top,
-                  height: viewportMini.height,
-                  boxShadow: "0 0 0 9999px rgba(0,0,0,0.28)",
-                }}
-              />
             </div>
-            <p className="mt-3 text-[11px] text-white/40 leading-snug hidden lg:block">
-              Click map to jump. Box = current view.
-            </p>
           </div>
         </aside>
 
-        {/* ---------- RIGHT: Full Content Sections ---------- */}
-        <main ref={contentWrapRef} className="space-y-40">
-          {SECTIONS.map((s) => (
-            <section
-              key={s.id}
-              id={s.id}
-              ref={setSectionRef(s.id)}
-              className="scroll-mt-28"
-              aria-labelledby={`${s.id}-title`}
-            >
-              <header className="mb-6">
-                <h3
-                  id={`${s.id}-title`}
-                  className="text-2xl md:text-3xl font-poiret tracking-wide"
-                >
-                  {s.title}
-                </h3>
-                <div className="mt-2 h-[2px] w-24 bg-white/30 rounded-full" />
-              </header>
-              <div className="space-y-5 max-w-prose leading-relaxed text-white/80 font-inter text-[15px] md:text-base">
-                {s.content.map((p, i) => (
-                  <p key={i}>{p}</p>
-                ))}
-              </div>
-            </section>
-          ))}
-        </main>
+        <div className="flex-1">
+          <div className="max-w-3xl space-y-40 text-left">
+            {SECTIONS.map((section) => (
+              <article
+                key={section.id}
+                id={section.id}
+                data-section-id={section.id}
+                ref={setSectionRef(section.id)}
+                className="scroll-mt-28"
+                aria-labelledby={`${section.id}-title`}
+              >
+                <header className="mb-8">
+                  <h3
+                    id={`${section.id}-title`}
+                    className="text-[40px] font-inter tracking-wide"
+                  >
+                    {section.title}
+                  </h3>
+                  <div className="mt-3 h-[2px] w-24 bg-white/40 rounded-full" />
+                </header>
+
+                <div className="space-y-8 leading-relaxed text-white/80 font-inter font-normal text-[30px]">
+                  {section.content.map((paragraph, index) => (
+                    <div key={index} className="flex flex-col gap-4">
+                      {paragraph.map((chunk, spanIndex) => (
+                        <AnimatedSpan key={spanIndex} delayIndex={spanIndex}>
+                          {chunk}
+                        </AnimatedSpan>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
       </div>
-    </div>
+    </section>
+  );
+};
+
+const AnimatedSpan = ({ children, delayIndex = 0 }) => {
+  const spanRef = useRef(null);
+  const scrollMetaRef = useRef({
+    lastY: typeof window !== "undefined" ? window.scrollY : 0,
+    direction: "down",
+  });
+
+  const HIDE_THRESHOLD = 80;
+  const ENTER_DELAY = Math.min(delayIndex * 0.08, 0.4);
+
+  useEffect(() => {
+    const node = spanRef.current;
+    if (!node || typeof window === "undefined") return;
+
+    let rafId = null;
+
+    const update = () => {
+      rafId = null;
+
+      const rect = node.getBoundingClientRect();
+      const viewportHeight = window.innerHeight || 0;
+      const { direction } = scrollMetaRef.current;
+
+      const isAboveViewport = rect.bottom <= 0;
+      const isBelowViewport = rect.top >= viewportHeight;
+
+      if (isAboveViewport || isBelowViewport) {
+        node.style.transitionDelay = "0s";
+        node.classList.remove("about-span--in", "about-span--leaving-top");
+        return;
+      }
+
+      if (rect.top <= HIDE_THRESHOLD && direction === "up") {
+        node.style.transitionDelay = "0s";
+        node.classList.remove("about-span--in");
+        node.classList.add("about-span--leaving-top");
+        return;
+      }
+
+      node.style.transitionDelay = `${ENTER_DELAY}s`;
+      node.classList.add("about-span--in");
+      node.classList.remove("about-span--leaving-top");
+    };
+
+    const schedule = () => {
+      const currentY = window.scrollY;
+      const delta = currentY - scrollMetaRef.current.lastY;
+
+      if (Math.abs(delta) > 1) {
+        scrollMetaRef.current.direction = delta > 0 ? "down" : "up";
+        scrollMetaRef.current.lastY = currentY;
+      }
+
+      if (rafId === null) {
+        rafId = requestAnimationFrame(update);
+      }
+    };
+
+    update();
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+
+    return () => {
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+    };
+  }, [ENTER_DELAY, HIDE_THRESHOLD]);
+
+  return (
+    <span ref={spanRef} className="about-span">
+      {children}
+    </span>
   );
 };
 
